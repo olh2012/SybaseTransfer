@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<exception-config xmlns="http://www.formssi.com/schema/exception"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xsi:schemaLocation="http://www.formssi.com/schema/exception exception-config.xsd"
+	defaultHandlers="File Detail" defaultLevel="FATAL" defaultView="error">
+	<handlers>
+		<handler id="File" beanId="FileExceptionHandler"/>
+		<handler id="Detail" beanId="DetailExceptionHandler"/>
+	</handlers>
+	<exception code="0000" throwable="java.lang.Throwable" localeKey="exception.platform"/>
+</exception-config>

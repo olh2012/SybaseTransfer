@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<xs:schema xmlns="http://www.formssi.com/schema/exception"
+	targetNamespace="http://www.formssi.com/schema/exception"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+	elementFormDefault="qualified" version="1.0">
+	<xs:simpleType name="classLayerType">
+		<xs:annotation>
+			<xs:documentation><![CDATA[
+				定义类层级数据类型为枚举类型（CONTROLLER、Service、DAO）
+			]]>
+			</xs:documentation>
+		</xs:annotation>
+   		<xs:restriction base="xs:NMTOKEN">
+   			<xs:enumeration value="CONTROLLER"/>
+   			<xs:enumeration value="SERVICE"/>
+   			<xs:enumeration value="DAO"/>
+   		</xs:restriction>
+   	</xs:simpleType>
+	<xs:simpleType name="exceptionLevelType">
+		<xs:annotation>
+			<xs:documentation><![CDATA[
+				定义异常级别数据类型为枚举类型（INFO、EXCEPTION、ERROR, FATAL）
+			]]>
+			</xs:documentation>
+		</xs:annotation>
+   		<xs:restriction base="xs:NMTOKEN">
+   			<xs:enumeration value="INFO"/>
+   			<xs:enumeration value="EXCEPTION"/>
+   			<xs:enumeration value="ERROR"/>
+   			<xs:enumeration value="FATAL"/>
+   		</xs:restriction>
+   	</xs:simpleType>
+	<xs:element name="exception-config">
+		<xs:annotation>
+			<xs:documentation><![CDATA[
+				定义根元素<exception-config>，可以包括两个子元素和三个属性
+			]]>
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+            <xs:sequence>
+            	<!-- 异常处理器定义的包装元素，在其内部定义具体的异常处理器-->
+                <xs:element maxOccurs="1" minOccurs="1" ref="handlers"/>
+                <!-- 定义异常，可以定义1至多个 -->
+                <xs:element maxOccurs="unbounded" minOccurs="1" ref="exception"/>
+            </xs:sequence>
+            <!-- 默认的异常处理器，会被<exception>元素的handlers属性覆盖 -->
+            <xs:attribute name="defaultHandlers" use="optional" type="xs:IDREFS"/>
+            <!-- 默认的异常级别，会被<exception>元素的level属性覆盖 -->
+            <xs:attribute name="defaultLevel" use="optional" type="exceptionLevelType" default="FATAL"/>
+            <!-- 默认的类层级，会被<exception>元素的classLayer属性覆盖 -->
+            <xs:attribute name="defaultClassLayer" use="optional" type="classLayerType"/>
+            <!-- 默认的返回视图，会被<exception>元素的view属性覆盖 -->
+            <xs:attribute name="defaultView" use="optional" type="xs:NMTOKEN"/>
+        </xs:complexType>
+        <xs:unique name="exceptionCodeUnique">
+        	<xs:annotation>
+				<xs:documentation><![CDATA[
+					限制异常<exception>元素的代码属性@code不能重复
+				]]>
+				</xs:documentation>
+			</xs:annotation>
+        	<xs:selector xpath="exception"/>
+        	<xs:field xpath="@code"/>
+        </xs:unique>
+	</xs:element>
+	<xs:element name="handlers">
+		<xs:complexType>
+            <xs:sequence>
+            	<!-- 异常处理器定义的包装元素 -->
+                <xs:element maxOccurs="unbounded" minOccurs="1" ref="handler"/>
+            </xs:sequence>
+        </xs:complexType>
+	</xs:element>
+	<xs:element name="handler">
+		<xs:annotation>
+			<xs:documentation><![CDATA[
+				定义异常处理器，这里beanId属性对应于Spring配置文件中该异常处理器的beanId，如果没有在Spring中配置，将忽略这里的配置，没有配置beanId时，使用id代替
+			]]>
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+	        <xs:attribute name="id" type="xs:ID" use="required"/>
+	        <xs:attribute name="beanId" type="xs:NMTOKEN" use="optional"/>
+	    </xs:complexType>
+	</xs:element>
+    <xs:element name="exception">
+    	<xs:annotation>
+			<xs:documentation><![CDATA[
+				定义异常，code属性需要唯一，throwable属性表示异常类，localeKey属性表示在国际化文件中的key值，classLayer表示类层级，handlers表示异常处理器，可以有多个
+			]]>
+			</xs:documentation>
+		</xs:annotation>
+        <xs:complexType>
+        	<xs:attribute name="code">
+            	<xs:simpleType>
+            		<xs:restriction base="xs:NMTOKEN">
+            			<xs:minLength value="4"/>
+            		</xs:restriction>
+            	</xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="throwable" type="xs:NMTOKENS"/>
+            <xs:attribute name="localeKey" type="xs:NMTOKEN"/>
+            <xs:attribute name="level" use="optional" type="exceptionLevelType"/>
+            <xs:attribute name="classLayer" use="optional" type="classLayerType"/>
+            <xs:attribute name="handlers" use="optional" type="xs:IDREFS"/>
+            <xs:attribute name="view" use="optional" type="xs:NMTOKEN"/>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

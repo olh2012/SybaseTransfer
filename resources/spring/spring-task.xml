@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+	
+	<!-- ======= 迁移 配置开始 ========================================= -->
+	<bean id="TransferContext" class="com.forms.task.transfer.TransferContext" 
+		p:defaultSrcJndi-ref="srcJndi" p:defaultTargetJndi-ref="targetJndi" 
+		p:executeOnGenerate="true" p:sqlFile="sqlfiles/transfer.sql" 
+		p:logFile="logfiles/log.txt" p:errorFile="logfiles/error.txt" p:warnFile="logfiles/warn.txt"/>
+	<bean id="AbstractTaskGroup" class="com.forms.task.core.base.TaskGroup" abstract="true"/>
+	<bean id="AbstractClearObjectTask" class="com.forms.task.transfer.task.ClearObjectTask" abstract="true" p:context-ref="TransferContext"/>
+	<bean id="AbstractTransferObjectTask" class="com.forms.task.transfer.task.TransferObjectTask" abstract="true" p:context-ref="TransferContext"/>
+	<bean id="AbstractTransferDataTask" class="com.forms.task.transfer.task.TransferDataTask" abstract="true" p:context-ref="TransferContext"/>
+	<bean id="AbstractSchemaModelFilter" class="com.forms.task.transfer.filter.impl.SchemaModelFilter" abstract="true"/>
+	<bean id="AbstractNameModelFilter" class="com.forms.task.transfer.filter.impl.NameModelFilter" abstract="true"/>
+	<bean id="AbstractPrefixModelFilter" class="com.forms.task.transfer.filter.impl.PrefixModelFilter" abstract="true"/>
+	<bean id="AbstractOgnlModelFilter" class="com.forms.task.transfer.filter.impl.OgnlModelFilter" abstract="true"/>
+	<bean id="AbstractPatternModelFilter" class="com.forms.task.transfer.filter.impl.PatternModelFilter" abstract="true"/>
+	
+	<!-- 迁移对象过滤器 -->
+	<bean id="appFilter" parent="AbstractSchemaModelFilter" p:schema="app"/>
+	<bean id="meritFilter" parent="AbstractSchemaModelFilter" p:schema="merit"/>
+	<bean id="admFilter" parent="AbstractSchemaModelFilter" p:schema="adm"/>
+	<bean id="amlsFilter" parent="AbstractSchemaModelFilter" p:schema="amls"/>
+	<bean id="basFilter" parent="AbstractSchemaModelFilter" p:schema="bas"/>
+	<bean id="boeFilter" parent="AbstractSchemaModelFilter" p:schema="boe"/>
+	<bean id="cmsFilter" parent="AbstractSchemaModelFilter" p:schema="cms"/>
+	<bean id="dwFilter" parent="AbstractSchemaModelFilter" p:schema="dw"/>
+	<bean id="ecrmFilter" parent="AbstractSchemaModelFilter" p:schema="ecrm"/>
+	<bean id="kpiFilter" parent="AbstractSchemaModelFilter" p:schema="kpi"/>
+	<bean id="midFilter" parent="AbstractSchemaModelFilter" p:schema="mid"/>
+	<bean id="odsFilter" parent="AbstractSchemaModelFilter" p:schema="ods"/>
+	
+	<bean id="nameFilter" parent="AbstractNameModelFilter" p:name="app.p_gykh_daybat"/>
+	<bean id="cvmsFilter" parent="AbstractPrefixModelFilter" p:schema="app" p:prefix="CVM_"/>
+	<bean id="cvmsBakFilter2" parent="AbstractPatternModelFilter" p:schema="app" p:including="^CVM_\w*bak\w*"/>
+		
+	<bean parent="AbstractTransferObjectTask" p:taskId="test" p:comment="测试" p:filter-ref="nameFilter" p:sqlFile="sqlfiles/test.sql"/>
+	<bean parent="AbstractTransferDataTask" p:taskId="test2" p:comment="测试" p:filter-ref="nameFilter" p:sqlFile="sqlfiles/test.sql"/>	
+	
+	<!-- 迁移任务配置 -->
+	<bean class="com.forms.task.transfer.TransferCommandTask" p:option="transfer" p:comment="开启在命令行自定义迁移任务"/>
+	<!-- 顶层任务串行执行 -->
+	<bean parent="AbstractTaskGroup" p:taskId="TransferTask" p:comment="迁移数据库对象、表数据">
+		<property name="taskList">
+			<list>
+				<!-- 1.先删除目标数据库对象，并发执行 -->
+				<bean parent="AbstractTaskGroup" p:taskId="ClearObject" p:comment="清除数据库对象" p:threadCount="8">
+					<property name="taskList">
+						<list>
+							<bean parent="AbstractClearObjectTask" p:taskId="clearAppObject" p:comment="清除app用户的对象" p:filter-ref="appFilter" p:sqlFile="sqlfiles/clear_object_app.sql"/>
+						</list>
+					</property>
+				</bean>
+				<!-- 2.迁移数据库对象，并发执行 -->
+				<bean parent="AbstractTaskGroup" p:taskId="TransferObject" p:comment="迁移数据库对象" p:threadCount="8">
+					<property name="taskList">
+						<list>
+							<bean parent="AbstractTransferObjectTask" p:taskId="appObject" p:comment="迁移app用户的对象定义" p:filter-ref="appFilter" p:sqlFile="sqlfiles/transfer_object_app.sql"/>
+						</list>
+					</property>
+				</bean>
+				<!-- 3.迁移数据，并发执行不同的表 -->
+				<bean parent="AbstractTaskGroup" p:taskId="TransferData" p:comment="迁移表数据" p:threadCount="8">
+					<property name="taskList">
+						<list>
+							<bean parent="AbstractTransferDataTask" p:taskId="appData" p:comment="迁移app用户表数据" p:filter-ref="appFilter" p:sqlFile="sqlfiles/transfer_data_app.sql"/>
+						</list>
+					</property>
+				</bean>
+			</list>
+		</property>
+	</bean>
+	<!-- ======= 迁移 配置结束 ========================================= -->
+</beans>
