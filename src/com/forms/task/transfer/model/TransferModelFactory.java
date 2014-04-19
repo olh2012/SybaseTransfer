@@ -118,7 +118,7 @@ public class TransferModelFactory {
 					 "  JOIN sysusers u " +
 					 "    ON s.uid = u.uid " +
 					 " WHERE u.uid > 100 " +
-					 " order by u.uid, s.type, s.name";
+					 " order by u.uid, case when s.type = 'U' then 1 when s.type ='V' then 2 else 3 end, s.name";
 			List<Map<String, Object>> lm = SpringUtil.getQueryListMap(sql, jndi);
 			if(null != lm && !lm.isEmpty()){
 				for(Map<String, Object> map : lm){
@@ -147,12 +147,18 @@ public class TransferModelFactory {
 					ITransferModel bean = constructor.newInstance("","");
 					String innerType = bean.getInnerType();
 					if(modelMap.containsKey(innerType)){
-						CommonLogger.warn("发现多个内部类型为["+innerType+"]的迁移对象类，取第一个["+model+"]");
+						CommonLogger.warn("发现多个类型为["+innerType+"]的迁移对象类，取第一个["+model+"]");
+					}else{
+						modelMap.put(innerType, constructor);	
+					}
+					innerType = bean.getType();
+					if(modelMap.containsKey(innerType)){
+						CommonLogger.warn("发现多个类型为["+innerType+"]的迁移对象类，取第一个["+model+"]");
 					}else{
 						modelMap.put(innerType, constructor);	
 					}
 				} catch (Exception e) {
-					CommonLogger.error("读取迁移对象类["+model+"]的内部类型发生异常，请检查是否提供了"+model.getSimpleName()+"(String,String)的构造函数", e);
+					CommonLogger.error("读取迁移对象类["+model+"]的类型发生异常，请检查是否提供了"+model.getSimpleName()+"(String,String)的构造函数", e);
 				}
 			}
 		}

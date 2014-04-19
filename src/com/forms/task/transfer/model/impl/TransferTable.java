@@ -25,9 +25,20 @@ public class TransferTable extends AbstractTransferModel implements ITransferDat
 	static{
 		DB_KEYS.put("TIME", "\"TIME\"");
 	}
+	
+	private long count;
 
 	public TransferTable(String name, String schema) {
 		super(name, schema, "TABLE", "U");
+	}
+	
+	public TransferTable(String name, String schema, long count) {
+		super(name, schema, "TABLE", "U");
+		this.count = count;
+	}
+
+	public long getCount() {
+		return count;
 	}
 
 	public String getDdlSql(IJndi srcJndi) {
@@ -35,7 +46,8 @@ public class TransferTable extends AbstractTransferModel implements ITransferDat
 		table.schema = super.getSchema();
 		table.tableName = super.getName();
 		String objectname = super.getObjectName();
-		Map<Integer,Column> columns =  getColumn(srcJndi, table);
+		Map<Integer,Column> columns =  getColumn(srcJndi, table);//列
+		List<Index> indexs = getIndex(srcJndi, table, columns);//索引
 		
 		StringBuilder sb = new StringBuilder("CREATE TABLE ").append(objectname).append("(");
 		StringBuilder colComments = new StringBuilder("");
@@ -51,24 +63,56 @@ public class TransferTable extends AbstractTransferModel implements ITransferDat
 			}
 		}
 		sb.deleteCharAt(sb.length()-1);
+		if(null != indexs && !indexs.isEmpty()){
+//			sb.append("\nGO");
+			for(Index index : indexs){
+				if("SA".equals(index.indexType)){
+					sb.append(",\n\t").append(index.toDdlSql());	
+				}
+			}
+		}
 		if(null != key && !"".equals(key)){
 			sb.append(",\n\tCONSTRAINT PK_"+table.tableName+" PRIMARY KEY ("+key.substring(1)+")");
 		}
 		sb.append("\n)" + separate);
-		List<Index> indexs = getIndex(srcJndi, table, columns);
+		
 		if(null != indexs && !indexs.isEmpty()){
 //			sb.append("\nGO");
 			for(Index index : indexs){
-				sb.append("\n").append(index.toDdlSql());
+				if(!"SA".equals(index.indexType)){
+					sb.append("\n").append(index.toDdlSql());	
+				}
 			}
 		}
 		if(null != table.memo){
 			sb.append("\ncomment on table ").append(objectname).append(" is '").append(table.memo).append("'" + separate);
 		}
 		sb.append(colComments);
+		
 		return sb.toString();
 	}
 	
+	public String getCommentSql(IJndi jndi) {
+		return null;
+	}
+
+	public String getGrantSql(IJndi jndi) {
+		StringBuilder sb = new StringBuilder();
+			sb.append("GRANT SELECT ON ").append(getObjectName()).append(" TO PUBLIC ");
+		try{
+			String sql = grantSql(getName(),getSchema());
+			List<String> list = SpringUtil.getQueryList(sql, String.class, jndi);
+			if(null != list && !list.isEmpty()){
+				for(String g : list){
+					sb.append("\n").append(g);
+				}
+				return sb.toString();
+			}
+		}catch(Exception e){
+		}
+		return sb.toString();
+	}
+
 	public String getTransferDataSql(IJndi srcJndi, IJndi targetJndi) {
 		String objectname = super.getObjectName();
 		String remote = targetJndi.getProperties().getProperty("db.remotedatebase");
@@ -125,7 +169,7 @@ public class TransferTable extends AbstractTransferModel implements ITransferDat
 					index.table = table;
 					index.columns = new ArrayList<Column>();
 					index.indexName = ((String)m.get("indexName")).trim();
-					index.indexType = (String)m.get("indexType");
+					index.indexType = ((String)m.get("indexType")).trim();
 				}
 				index.columns.add(columns.get(((Number)m.get("columnId")).intValue()));
 			}
@@ -153,6 +197,28 @@ public class TransferTable extends AbstractTransferModel implements ITransferDat
 				" WHERE a.table_name = '"+table.tableName+"'	" +
 				"   AND d.name = '"+table.schema+"'				" +
 				" ORDER BY b.column_id 	" ;
+		return sql;
+	}
+	
+	private String grantSql(String tableName, String schema){
+		String sql = " SELECT 'GRANT '||substring(                         " +
+					"       CASE WHEN S.insertauth = 'Y' THEN ',INSERT' ELSE '' END " +
+					"     ||CASE WHEN S.deleteauth = 'Y' THEN ',DELETE' ELSE '' END	" +
+					"     ||CASE WHEN S.updateauth = 'Y' THEN ',UPDATE' ELSE '' END	" +
+					"     ||CASE WHEN S.alterauth = 'Y' THEN ',ALTER' ELSE '' END 	" +
+					"     ||CASE WHEN S.referenceauth = 'Y' THEN ',REFERENCES' ELSE '' END " +
+					"	, 2)||' ON '||S.screator||'.'||S.stname||' TO '||S.grantee AS AUTH " +
+					" FROM SYSTABAUTH S						" +
+					" JOIN sysusers U						" +
+					"   ON S.screator = U.name				" +
+					"WHERE S.stname = '"+tableName+"'	" +
+					"  AND S.screator = '"+schema+"'	" +
+					"  AND U.uid > 101" +
+					"  AND (S.insertauth = 'Y' 		" +
+					"	 OR S.deleteauth = 'Y' 		" +
+					"	 OR S.updateauth = 'Y' 		" +
+					"	 OR S.alterauth = 'Y' 		" +
+					"	 OR S.referenceauth = 'Y')	" ;
 		return sql;
 	}
 	
@@ -205,12 +271,16 @@ public class TransferTable extends AbstractTransferModel implements ITransferDat
 		private Table table;
 		private List<Column> columns;
 		private String toDdlSql(){
-			StringBuilder sb = new StringBuilder("create "+ indexType+" index "+indexName+" on "+table.schema+"."+table.tableName+"(");
-			for(Column col : columns){
-				sb.append(col.columnName).append(",");
+			if("SA".equals(indexType)){
+				return "UNIQUE ("+columns.get(0).columnName+")";
+			}else{
+				StringBuilder sb = new StringBuilder("create "+ indexType+" index "+indexName+" on "+table.schema+"."+table.tableName+"(");
+				for(Column col : columns){
+					sb.append(col.columnName).append(",");
+				}
+				sb.deleteCharAt(sb.length()-1).append(")");
+				return sb.toString();
 			}
-			sb.deleteCharAt(sb.length()-1).append(")");
-			return sb.toString();
 		}
 	}
 }

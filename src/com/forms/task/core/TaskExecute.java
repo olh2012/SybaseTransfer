@@ -21,10 +21,10 @@ import com.forms.task.core.command.Options;
 public class TaskExecute {
 	
 	public static void main(String[] args) throws Exception {
-		TaskManager.initialize();
+		TaskManager.initialize(getConfigFile(args));
 		Options opts = setCommandOptions(args);
 		CommandLine cl = CommandHelp.parseCommandOptions(opts, args);
-		List<ITask> taskList = TaskManager.getTaskList(cl, opts, "h");
+		List<ITask> taskList = CommandHelp.getTaskList(cl, opts, "h");
 		TaskManager.execute(taskList, CommandHelp.parseIntCommandOption(cl, "tn", 1));
 	}
 	
@@ -36,7 +36,19 @@ public class TaskExecute {
 		Options opts = new Options();
 		opts.addOption("h", "help", false, "打印帮助信息");
 		opts.addOption("tn", "threadNumber", true, "提交多个任务时，并发执行的线程数，小于或等于1时表示串行执行");
-		TaskManager.setCommandOptions(opts, args);
+		opts.addOption("cf", "configFile", true, "Spring配置文件，不能有空格");
+		CommandHelp.setCommandOptions(opts, args);
 		return opts;
+	}
+	
+	private static String getConfigFile(String[] args){
+		if(null != args && 0 != args.length){
+			for(int i=0,l=args.length; i<l-1; i++){
+				if(args[i].equals("-cf") || args[i].equals("--configFile")){
+					return args[i+1];
+				}
+			}
+		}
+		return null;
 	}
 }

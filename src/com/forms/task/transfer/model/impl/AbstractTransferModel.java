@@ -38,9 +38,10 @@ public abstract class AbstractTransferModel implements ITransferModel{
 	 * @return
 	 */
 	public String getDropSql(IJndi jndi){
-		String name = getObjectName();
 		String type = getType();
-		return "IF OBJECT_ID ('"+name+"') IS NOT NULL \n\tDROP "+type+" "+name+" ";
+		return " IF EXISTS (SELECT 1 FROM sysobjects s JOIN sysusers u on s.uid = u.uid " +
+			   " WHERE s.name = '"+getName()+"' AND u.name = '"+getSchema()+"' AND s.type = '"+getInnerType()+"') " +
+			   "\n\tDROP "+type+" "+getObjectName();
 	}
 	
 	/**
@@ -60,8 +61,16 @@ public abstract class AbstractTransferModel implements ITransferModel{
 		return count == 1;
 	}
 
-	public String getObjectName() {
+	private String getSelectObjectName() {
 		return schema+"."+name;
+	}
+	
+	public String getObjectName(){
+		if(name.contains("-")){
+			return schema+".\""+name+"\"";
+		}else{
+			return getSelectObjectName();
+		}
 	}
 	
 	public String getType() {

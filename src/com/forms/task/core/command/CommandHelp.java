@@ -1,10 +1,18 @@
 package com.forms.task.core.command;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 
 import com.forms.platform.core.exception.Throw;
+import com.forms.platform.core.spring.util.SpringHelp;
+import com.forms.task.core.ITask;
+import com.forms.task.core.TaskManager;
 
 /**
  * Copy Right Information : Forms Syntron <br>
@@ -16,6 +24,61 @@ import com.forms.platform.core.exception.Throw;
  * Date : 2013-11-8<br>
  */
 public class CommandHelp {
+	
+	/**
+	 * 动态设置命令行参数
+	 * @param options
+	 * @param args
+	 */
+	public static void setCommandOptions(Options options, String[] args){
+		List<String> opts = new ArrayList<String>();
+		if(null != args && 0 != args.length){
+			for(String arg : args){
+				if(null != arg && arg.startsWith("-") && arg.length() >= 2){
+					opts.add(arg.substring(1));
+				}
+			}
+		}
+		for(ICommandTask ct : getCommandTaskList()){
+			CommandHelp.addOption(options, ct.getOption(), null, false, ct.getComment());
+			if(opts.contains(ct.getOption())){
+				ct.addCommandOptions(options);	
+			}
+		}
+	}
+	
+	/**
+	 * 根据命令行获取任务列表，获取失败时打印帮助信息
+	 * @param cl
+	 * @param options
+	 * @param helpOption
+	 * @return
+	 */
+	public static List<ITask> getTaskList(CommandLine cl, Options options, String helpOption){
+		boolean print = false;
+		if(cl == null){
+			print = true;
+		}else if(cl.hasOption(helpOption)){
+			print = true;
+		}else{
+			List<ITask> taskList = getTaskList(cl);
+			if(null != taskList && !taskList.isEmpty()){
+				return taskList;
+			}else{
+				print = true;
+			}
+		}
+		if(print){
+			HelpFormatter hf = new HelpFormatter();
+			hf.setOptionComparator(new Comparator<Object>(){//覆盖默认的命令行参数打印顺序
+				public int compare(Object o1, Object o2) {
+					return 0;
+				}
+			});
+			hf.printHelp("Options", "", options, TaskManager.getTaskHelpInfo());
+		}
+		return null;
+	}
 	
 	/**
 	 * 添加命令行参数
@@ -90,5 +153,36 @@ public class CommandHelp {
 			return Boolean.parseBoolean(cl.getOptionValue(option));
 		}catch(Exception e){}
 		return defaultValue;
+	}
+	
+	/**
+	 * 根据命令行获取任务
+	 * @param commandLine
+	 * @return
+	 */
+	private static List<ITask> getTaskList(CommandLine commandLine){
+		String[] tasks = commandLine.getArgs();
+		List<ITask> taskList = new ArrayList<ITask>();
+		for(ICommandTask ct : getCommandTaskList()){
+			List<ITask> tl = ct.getTaskList(commandLine);
+			if(null != tl && !tl.isEmpty()){
+				taskList.addAll(tl);	
+			}
+		}
+		for(int i=0,l=tasks.length; i<l; i++){
+			ITask task = TaskManager.getTask(tasks[i]);
+			if(null != task){
+				taskList.add(task);
+			}
+		}
+		return taskList;
+	}
+	
+	private static List<ICommandTask> getCommandTaskList(){
+		try{
+			return SpringHelp.getBeanslistOfType(ICommandTask.class);
+		}catch(Exception ignore){
+			return new ArrayList<ICommandTask>();
+		}
 	}
 }

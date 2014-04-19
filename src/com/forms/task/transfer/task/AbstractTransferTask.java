@@ -82,13 +82,16 @@ public abstract class AbstractTransferTask extends AbstractTask{
 		try{
 			return SpringUtil.execute(sql, jndi);
 		}catch(Throwable t){
-			if(!model.getInnerType().equalsIgnoreCase("U")){
-				warn("直接执行SQL出现异常，尝试使用DDL存储过程来执行SQL语句\n对象名:"+model.getObjectName()+"\nSQL:\n"+sql);	
-			}
-			return executeSqlWithDdl(jndi, sql, model);	
+			error("执行SQL出现异常，\n对象名:"+model.getObjectName()+"\nSQL:\n"+sql+"Message:"+Throw.getExceptionMessage(t));	
+			return -1;
+//			if(!model.getInnerType().equalsIgnoreCase("U")){
+//				warn("直接执行SQL出现异常，尝试使用DDL存储过程来执行SQL语句\n对象名:"+model.getObjectName()+"\nSQL:\n"+sql);	
+//			}
+//			return executeSqlWithDdl(jndi, sql, model);	
 		}
 	}
 	
+	@SuppressWarnings("unused")
 	private int executeSqlWithDdl(IJndi jndi, String sql, ITransferModel model){
 		try{
 			String execute = "{call merit.execDdl(?)}";
@@ -109,11 +112,10 @@ public abstract class AbstractTransferTask extends AbstractTask{
 	 * @param sqlFile
 	 * @param append
 	 */
-	protected void transferObject(IJndi srcJndi, IJndi targetJndi, ITransferModel model, boolean rebuild, boolean executeOnGenerate, String sqlFile, boolean append, String action,int index,int total) {
+	protected void transferObject(IJndi srcJndi, IJndi targetJndi, ITransferModel model, boolean rebuild, boolean executeOnGenerate, String sqlFile, boolean append, String action,String index,String total) {
 		OutputStreamWriter fw = null;
 		String name = model.getObjectName();
 		long start = System.nanoTime();
-		index++;
 		log(action+"执行开始：("+total+"-"+index+")"+name);
 		try{
 			fw = new OutputStreamWriter(new FileOutputStream(sqlFile, append), getEncoding());
@@ -161,7 +163,7 @@ public abstract class AbstractTransferTask extends AbstractTask{
 		OutputStreamWriter fw = null;
 		try{
 			fw = new OutputStreamWriter(new FileOutputStream(file, true), getEncoding());
-			fw.write(Thread.currentThread()+":"+log+"\n");
+			fw.write(Thread.currentThread()+":"+Tool.DATE.getDateAndTime()+":"+log+"\n");
 			CommonLogger.info(log);
 		}catch (IOException e) {
 			Throw.throwException("没有找到输出日志的文件:"+file, e);

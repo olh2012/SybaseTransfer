@@ -21,6 +21,15 @@ public class TransferView extends AbstractTransferModel {
 	public String getDdlSql(IJndi srcJndi) {
 		String sql = "select viewtext from SYSVIEWS where viewname = ? and vcreator = ?";
 		String result = SpringUtil.getQueryBean(sql, String.class, new String[]{getName(),getSchema()}, srcJndi);
+		//result += "\nGRANT SELECT ON "+getObjectName()+" TO PUBLIC";
 		return result;
+	}
+
+	public String getGrantSql(IJndi jndi) {
+		return "GRANT SELECT ON "+getObjectName()+" TO PUBLIC";
+	}
+
+	public String getCommentSql(IJndi jndi) {
+		return null;
 	}
 }

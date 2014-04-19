@@ -19,4 +19,10 @@ public interface ITransferDataModel extends ITransferModel{
 	 * @return
 	 */
 	public String getTransferDataSql(IJndi srcJndi, IJndi targetJndi);
+	
+	/**
+	 * 获取数据量
+	 * @return
+	 */
+	public long getCount();
 }

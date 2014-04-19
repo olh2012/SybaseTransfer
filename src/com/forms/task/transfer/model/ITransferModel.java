@@ -58,9 +58,25 @@ public interface ITransferModel{
 	public String getDropSql(IJndi jndi);
 	
 	/**
+	 * 获取授权语句
+	 * @param jndi
+	 * @return
+	 */
+	public String getGrantSql(IJndi jndi);
+	
+	/**
+	 * 获取注释语句
+	 * @param jndi
+	 * @return
+	 */
+	public String getCommentSql(IJndi jndi);
+	
+	/**
 	 * 对象是否存在
 	 * @param jndi
 	 * @return
 	 */
 	public boolean exists(IJndi jndi);
+	
+	
 }

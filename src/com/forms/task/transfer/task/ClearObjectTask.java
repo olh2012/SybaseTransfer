@@ -5,7 +5,6 @@ import java.io.OutputStreamWriter;
 import java.util.List;
 
 import com.forms.platform.core.database.jndi.IJndi;
-import com.forms.platform.core.logger.CommonLogger;
 import com.forms.task.transfer.model.ITransferModel;
 import com.forms.task.transfer.model.TransferModelFactory;
 
@@ -24,11 +23,11 @@ public class ClearObjectTask extends AbstractTransferTask{
 			boolean executeOnGenerate, String sqlFile) {
 		List<ITransferModel> list = TransferModelFactory.getTransferModelList(getTargetJndi(), getFilter());
 		String action = executeOnGenerate ? "drop数据库对象":"生成drop数据库对象的DDL语句";
-		CommonLogger.info("开始"+action+"，对象数："+list.size());
+		log("开始"+action+"，对象数："+list.size());
 		long start = System.nanoTime();
 		transferList(srcJndi, targetJndi, list, executeOnGenerate, sqlFile, action);
 		long time = System.nanoTime()-start;
-		CommonLogger.info(action+"完成，对象数："+list.size()+"，执行时间："+time/1000000000+" s,"+time/1000000+" ms,"+time+" ns");
+		log(action+"完成，对象数："+list.size()+"，执行时间："+time/1000000000+" s,"+time/1000000+" ms,"+time+" ns");
 	}
 	
 	/**
@@ -42,8 +41,10 @@ public class ClearObjectTask extends AbstractTransferTask{
 	private void transferList(IJndi srcJndi, IJndi targetJndi, List<ITransferModel> list, boolean executeOnGenerate, String sqlFile, String action) {
 		if(null != list && !list.isEmpty()){
 			boolean rebuild = true;
-			for(int i=0,s=list.size(); i<s; i++){
-				transferObject(srcJndi, targetJndi, list.get(i), rebuild, executeOnGenerate, sqlFile, i!=0, action, i, s);
+			int s = list.size();
+			String total = s+"";
+			for(int i=0; i<s; i++){
+				transferObject(srcJndi, targetJndi, list.get(i), rebuild, executeOnGenerate, sqlFile, i!=0, action, i+1+"", total);
 			}
 		}
 	}
@@ -54,7 +55,7 @@ public class ClearObjectTask extends AbstractTransferTask{
 			OutputStreamWriter writer) throws IOException {
 		String name = model.getObjectName();
 		if(!model.exists(targetJndi)){
-			CommonLogger.error("目标源数据库中已经不存在  "+name + "，忽略 "+name+"...");
+			error("目标源数据库中已经不存在  "+name + "，忽略 "+name+"...");
 			return -1;
 		}
 		StringBuilder sb = new StringBuilder();

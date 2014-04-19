@@ -1,15 +1,11 @@
 package com.forms.task.core;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import com.forms.platform.core.init.InitManage;
 import com.forms.platform.core.logger.CommonLogger;
@@ -17,8 +13,6 @@ import com.forms.platform.core.spring.util.SpringHelp;
 import com.forms.platform.core.spring.util.SpringUtil;
 import com.forms.platform.core.util.Tool;
 import com.forms.task.core.base.TaskGroup;
-import com.forms.task.core.command.CommandHelp;
-import com.forms.task.core.command.ICommandTask;
 
 /**
  * Copy Right Information : Forms Syntron <br>
@@ -38,10 +32,14 @@ public class TaskManager {
 	/**
 	 * 初始化
 	 */
-	public static void initialize(){
+	public static void initialize(String configFile){
 		if(!hasInit){
 			if(!SpringHelp.hasInit()){
-				new ClassPathXmlApplicationContext("spring/applicationContext.xml");
+				if(null == configFile){
+					new ClassPathXmlApplicationContext("spring/applicationContext.xml");
+				}else{
+					new FileSystemXmlApplicationContext(configFile);
+				}
 				InitManage.initialize();
 			}
 			Map<String, ITask> map = SpringUtil.getBeansOfType(ITask.class);
@@ -64,39 +62,6 @@ public class TaskManager {
 			}
 			hasInit = true;
 		}
-	}
-	
-	/**
-	 * 获取任务列表，获取失败时打印帮助信息
-	 * @param cl
-	 * @param options
-	 * @param helpOption
-	 * @return
-	 */
-	public static List<ITask> getTaskList(CommandLine cl, Options options, String helpOption){
-		boolean print = false;
-		if(cl == null){
-			print = true;
-		}else if(cl.hasOption(helpOption)){
-			print = true;
-		}else{
-			List<ITask> taskList = getTaskList(cl);
-			if(null != taskList && !taskList.isEmpty()){
-				return taskList;
-			}else{
-				print = true;
-			}
-		}
-		if(print){
-			HelpFormatter hf = new HelpFormatter();
-			hf.setOptionComparator(new Comparator<Object>(){//覆盖默认的命令行参数打印顺序
-				public int compare(Object o1, Object o2) {
-					return 0;
-				}
-			});
-			hf.printHelp("Options", "", options, help);
-		}
-		return null;
 	}
 	
 	/**
@@ -131,27 +96,6 @@ public class TaskManager {
 	}
 	
 	/**
-	 * 设置命令行参数
-	 * @param options
-	 */
-	public static void setCommandOptions(Options options, String[] args){
-		List<String> opts = new ArrayList<String>();
-		if(null != args && 0 != args.length){
-			for(String arg : args){
-				if(null != arg && arg.startsWith("-") && arg.length() >= 2){
-					opts.add(arg.substring(1));
-				}
-			}
-		}
-		for(ICommandTask ct : getCommandTaskList()){
-			CommandHelp.addOption(options, ct.getOption(), null, false, ct.getComment());
-			if(opts.contains(ct.getOption())){
-				ct.addCommandOptions(options);	
-			}
-		}
-	}
-	
-	/**
 	 * 注册任务
 	 * @param taskId
 	 * @param task
@@ -168,33 +112,10 @@ public class TaskManager {
 	}
 	
 	/**
-	 * 根据命令行获取任务
-	 * @param commandLine
+	 * 获取任务帮助信息
 	 * @return
 	 */
-	private static List<ITask> getTaskList(CommandLine commandLine){
-		String[] tasks = commandLine.getArgs();
-		List<ITask> taskList = new ArrayList<ITask>();
-		for(ICommandTask ct : getCommandTaskList()){
-			List<ITask> tl = ct.getTaskList(commandLine);
-			if(null != tl && !tl.isEmpty()){
-				taskList.addAll(tl);	
-			}
-		}
-		for(int i=0,l=tasks.length; i<l; i++){
-			ITask task = TaskManager.getTask(tasks[i]);
-			if(null != task){
-				taskList.add(task);
-			}
-		}
-		return taskList;
-	}
-	
-	private static List<ICommandTask> getCommandTaskList(){
-		try{
-			return SpringHelp.getBeanslistOfType(ICommandTask.class);
-		}catch(Exception ignore){
-			return new ArrayList<ICommandTask>();
-		}
+	public static String getTaskHelpInfo(){
+		return help;
 	}
 }

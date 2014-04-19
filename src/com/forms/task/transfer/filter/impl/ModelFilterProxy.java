@@ -46,4 +46,8 @@ public class ModelFilterProxy implements IModelFilter{
 		return true;
 	}
 
+	public void setFilterList(List<IModelFilter> filterList) {
+		this.filterList = filterList;
+	}
+
 }
