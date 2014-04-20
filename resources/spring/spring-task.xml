@@ -15,38 +15,57 @@
 	<!-- ======= 迁移 配置开始 ========================================= -->
 	<bean id="TransferContext" class="com.forms.task.transfer.TransferContext" 
 		p:defaultSrcJndi-ref="srcJndi" p:defaultTargetJndi-ref="targetJndi" 
-		p:executeOnGenerate="true" p:sqlFile="sqlfiles/transfer.sql" 
+		p:executeOnGenerate="true" p:sqlFile="sqlfiles/transfer.sql"  p:encoding="GB2312"
 		p:logFile="logfiles/log.txt" p:errorFile="logfiles/error.txt" p:warnFile="logfiles/warn.txt"/>
 	<bean id="AbstractTaskGroup" class="com.forms.task.core.base.TaskGroup" abstract="true"/>
 	<bean id="AbstractClearObjectTask" class="com.forms.task.transfer.task.ClearObjectTask" abstract="true" p:context-ref="TransferContext"/>
 	<bean id="AbstractTransferObjectTask" class="com.forms.task.transfer.task.TransferObjectTask" abstract="true" p:context-ref="TransferContext"/>
 	<bean id="AbstractTransferDataTask" class="com.forms.task.transfer.task.TransferDataTask" abstract="true" p:context-ref="TransferContext"/>
+	<bean id="AbstractTransferDataFormTableTask" class="com.forms.task.transfer.task.TransferDataTask" abstract="true" p:formTable="true" p:context-ref="TransferContext"/>
 	<bean id="AbstractSchemaModelFilter" class="com.forms.task.transfer.filter.impl.SchemaModelFilter" abstract="true"/>
+	<bean id="AbstractNotSchemaModelFilter" class="com.forms.task.transfer.filter.impl.NotSchemaModelFilter" abstract="true"/>
 	<bean id="AbstractNameModelFilter" class="com.forms.task.transfer.filter.impl.NameModelFilter" abstract="true"/>
+	<bean id="AbstractModelFilterProxy" class="com.forms.task.transfer.filter.impl.ModelFilterProxy" abstract="true"/>
 	<bean id="AbstractPrefixModelFilter" class="com.forms.task.transfer.filter.impl.PrefixModelFilter" abstract="true"/>
 	<bean id="AbstractOgnlModelFilter" class="com.forms.task.transfer.filter.impl.OgnlModelFilter" abstract="true"/>
 	<bean id="AbstractPatternModelFilter" class="com.forms.task.transfer.filter.impl.PatternModelFilter" abstract="true"/>
+	<bean id="AbstractTypeModelFilter" class="com.forms.task.transfer.filter.impl.TypeModelFilter" abstract="true"/>
+	<bean id="AbstractExcludingModelFilter" class="com.forms.task.transfer.filter.impl.ExcludingModelFilter" abstract="true"/>
 	
 	<!-- 迁移对象过滤器 -->
 	<bean id="appFilter" parent="AbstractSchemaModelFilter" p:schema="app"/>
-	<bean id="meritFilter" parent="AbstractSchemaModelFilter" p:schema="merit"/>
-	<bean id="admFilter" parent="AbstractSchemaModelFilter" p:schema="adm"/>
-	<bean id="amlsFilter" parent="AbstractSchemaModelFilter" p:schema="amls"/>
-	<bean id="basFilter" parent="AbstractSchemaModelFilter" p:schema="bas"/>
-	<bean id="boeFilter" parent="AbstractSchemaModelFilter" p:schema="boe"/>
-	<bean id="cmsFilter" parent="AbstractSchemaModelFilter" p:schema="cms"/>
-	<bean id="dwFilter" parent="AbstractSchemaModelFilter" p:schema="dw"/>
-	<bean id="ecrmFilter" parent="AbstractSchemaModelFilter" p:schema="ecrm"/>
-	<bean id="kpiFilter" parent="AbstractSchemaModelFilter" p:schema="kpi"/>
-	<bean id="midFilter" parent="AbstractSchemaModelFilter" p:schema="mid"/>
-	<bean id="odsFilter" parent="AbstractSchemaModelFilter" p:schema="ods"/>
+	<bean id="testFilter" parent="AbstractSchemaModelFilter" p:schema="test"/>
+	<bean id="notTnFilter" parent="AbstractNotSchemaModelFilter" p:schema="tn"/>
+	<bean id="tableButNotTn" parent="AbstractModelFilterProxy">
+		<property name="filterList">
+			<list>
+				<ref bean="notTnFilter"/>
+				<bean parent="AbstractTypeModelFilter" p:type="TABLE"></bean>
+			</list>
+		</property>
+	</bean>
+	<bean id="viewButNotTn" parent="AbstractModelFilterProxy">
+		<property name="filterList">
+			<list>
+				<ref bean="notTnFilter"/>
+				<bean parent="AbstractTypeModelFilter" p:type="VIEW"></bean>
+			</list>
+		</property>
+	</bean>
+	<bean id="procedureButNotTn" parent="AbstractModelFilterProxy">
+		<property name="filterList">
+			<list>
+				<ref bean="notTnFilter"/>
+				<bean parent="AbstractTypeModelFilter" p:type="PROCEDURE"></bean>
+			</list>
+		</property>
+	</bean>
 	
-	<bean id="nameFilter" parent="AbstractNameModelFilter" p:name="app.p_gykh_daybat"/>
-	<bean id="cvmsFilter" parent="AbstractPrefixModelFilter" p:schema="app" p:prefix="CVM_"/>
-	<bean id="cvmsBakFilter2" parent="AbstractPatternModelFilter" p:schema="app" p:including="^CVM_\w*bak\w*"/>
-		
-	<bean parent="AbstractTransferObjectTask" p:taskId="test" p:comment="测试" p:filter-ref="nameFilter" p:sqlFile="sqlfiles/test.sql"/>
-	<bean parent="AbstractTransferDataTask" p:taskId="test2" p:comment="测试" p:filter-ref="nameFilter" p:sqlFile="sqlfiles/test.sql"/>	
+	<bean id="nameFilter" parent="AbstractNameModelFilter" p:name="app.V_TEST1"/>
+	<bean id="CrmFilter" parent="AbstractPrefixModelFilter" p:schema="app" p:prefix="CRM_"/>
+	<bean id="CrmBakFilter2" parent="AbstractPatternModelFilter" p:schema="app" p:including="^CRM_\w*bak\w*"/>
+	
+	<bean p:taskId="initDbObject" p:comment="初始化数据库迁移对象" class="com.forms.task.transfer.task.InitDbObjTask" p:jndi-ref="srcJndi"/>
 	
 	<!-- 迁移任务配置 -->
 	<bean class="com.forms.task.transfer.TransferCommandTask" p:option="transfer" p:comment="开启在命令行自定义迁移任务"/>
@@ -55,27 +74,50 @@
 		<property name="taskList">
 			<list>
 				<!-- 1.先删除目标数据库对象，并发执行 -->
-				<bean parent="AbstractTaskGroup" p:taskId="ClearObject" p:comment="清除数据库对象" p:threadCount="8">
+				<bean parent="AbstractTaskGroup" p:taskId="ClearObject" p:comment="清除数据库对象" p:threadCount="3">
 					<property name="taskList">
 						<list>
-							<bean parent="AbstractClearObjectTask" p:taskId="clearAppObject" p:comment="清除app用户的对象" p:filter-ref="appFilter" p:sqlFile="sqlfiles/clear_object_app.sql"/>
+							<bean parent="AbstractClearObjectTask" p:taskId="clearNotTnObject" p:comment="清除不是tn用户的对象" p:filter-ref="notTnFilter" p:sqlFile="sqlfiles/clear_object_not_tn.sql"/>
 						</list>
 					</property>
 				</bean>
-				<!-- 2.迁移数据库对象，并发执行 -->
-				<bean parent="AbstractTaskGroup" p:taskId="TransferObject" p:comment="迁移数据库对象" p:threadCount="8">
+				<!-- 2.迁移数据库对象定义，串行执行 -->
+				<bean parent="AbstractTaskGroup" p:taskId="TransferObject" p:comment="迁移数据库对象" p:threadCount="1">
 					<property name="taskList">
 						<list>
-							<bean parent="AbstractTransferObjectTask" p:taskId="appObject" p:comment="迁移app用户的对象定义" p:filter-ref="appFilter" p:sqlFile="sqlfiles/transfer_object_app.sql"/>
+							<bean parent="AbstractTransferObjectTask" p:taskId="transfertableButNotTn" p:comment="迁移不是tn用户的表定义" p:filter-ref="tableButNotTn" p:sqlFile="sqlfiles/transfer_table_not_tn.sql"/>
+							<bean parent="AbstractTaskGroup" p:taskId="transferviewButNotTn" p:comment="迁移不是tn用户的视图定义" p:threadCount="1">
+								<property name="taskList">
+									<list>
+										<!-- 先迁移app.V_TEST2，因为app.V_TEST1依赖于它 -->
+										<bean parent="AbstractTransferObjectTask" p:comment="迁移app.V_TEST2">
+											<property name="filter">
+												<bean id="app.V_TEST2" parent="AbstractNameModelFilter" p:name="app.V_TEST2"/>
+											</property>
+										</bean>
+										<bean parent="AbstractTransferObjectTask" p:filter-ref="viewButNotTn" p:sqlFile="sqlfiles/transfer_view_not_tn.sql"/>
+									</list>
+								</property>
+							</bean>
+							<bean parent="AbstractTransferObjectTask" p:taskId="transferprocedureButNotTn" p:comment="迁移不是tn用户的存储过程定义" p:filter-ref="procedureButNotTn" p:sqlFile="sqlfiles/transfer_procedure_not_tn.sql"/>
 						</list>
 					</property>
 				</bean>
 				<!-- 3.迁移数据，并发执行不同的表 -->
-				<bean parent="AbstractTaskGroup" p:taskId="TransferData" p:comment="迁移表数据" p:threadCount="8">
-					<property name="taskList">
-						<list>
-							<bean parent="AbstractTransferDataTask" p:taskId="appData" p:comment="迁移app用户表数据" p:filter-ref="appFilter" p:sqlFile="sqlfiles/transfer_data_app.sql"/>
-						</list>
+				<bean parent="AbstractTransferDataFormTableTask" p:taskId="TransferData" p:comment="迁移不是tn用户的表数据" p:threadCount="4">
+					<property name="filter">
+						<bean parent="AbstractModelFilterProxy">
+							<property name="filterList">
+								<list>
+									<!-- 不是tn用户 -->
+									<ref bean="tableButNotTn"/>
+									<!-- 排除一些数据特别大的表 -->
+									<bean parent="AbstractExcludingModelFilter">
+										<property name="excluding" value="aa,bb"/>
+									</bean>
+								</list>
+							</property>
+						</bean>
 					</property>
 				</bean>
 			</list>
