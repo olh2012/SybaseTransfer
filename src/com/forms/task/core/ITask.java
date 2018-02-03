@@ -3,8 +3,7 @@ package com.forms.task.core;
 import java.util.concurrent.Callable;
 
 /**
- * Copy Right Information : Forms Syntron <br>
- * Project : 数据分析平台迁移项目 <br>
+ * Project : Sybase数据库迁移 <br>
  * Description : 迁移任务接口<br>
  * Author : OuLinhai <br>
  * Version : 1.0.0 <br>

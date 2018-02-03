@@ -5,8 +5,7 @@ import com.forms.platform.core.spring.util.SpringUtil;
 import com.forms.task.transfer.model.ITransferModel;
 
 /**
- * Copy Right Information : Forms Syntron <br>
- * Project : 数据分析平台迁移项目 <br>
+ * Project : Sybase数据库迁移 <br>
  * Description : 抽象迁移对象实现类<br>
  * Author : OuLinhai <br>
  * Version : 1.0.0 <br>

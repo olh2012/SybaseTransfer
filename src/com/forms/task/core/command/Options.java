@@ -8,8 +8,7 @@ import org.apache.commons.cli.OptionGroup;
 import com.forms.platform.core.util.Tool;
 
 /**
- * Copy Right Information : Forms Syntron <br>
- * Project : 数据分析平台迁移项目 <br>
+ * Project : Sybase数据库迁移 <br>
  * Description : 覆盖命令行参数选项类，保留原有顺序<br>
  * Author : OuLinhai <br>
  * Version : 1.0.0 <br>

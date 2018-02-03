@@ -4,8 +4,7 @@ import com.forms.platform.core.filter.IFilter;
 import com.forms.task.transfer.model.ITransferModel;
 
 /**
- * Copy Right Information : Forms Syntron <br>
- * Project : 数据分析平台迁移项目 <br>
+ * Project : Sybase数据库迁移 <br>
  * Description : 模型过滤器接口<br>
  * Author : OuLinhai <br>
  * Version : 1.0.0 <br>

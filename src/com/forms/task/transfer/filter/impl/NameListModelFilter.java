@@ -6,8 +6,7 @@ import com.forms.platform.core.util.Tool;
 import com.forms.task.transfer.model.ITransferModel;
 
 /**
- * Copy Right Information : Forms Syntron <br>
- * Project : 数据分析平台迁移项目 <br>
+ * Project : Sybase数据库迁移 <br>
  * Description : 根据用户和名称列表过滤模型<br>
  * Author : OuLinhai <br>
  * Version : 1.0.0 <br>

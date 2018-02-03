@@ -4,8 +4,7 @@ import com.forms.platform.core.database.jndi.IJndi;
 import com.forms.platform.core.spring.util.SpringUtil;
 
 /**
- * Copy Right Information : Forms Syntron <br>
- * Project : 数据分析平台迁移项目 <br>
+ * Project : Sybase数据库迁移 <br>
  * Description : 视图迁移对象<br>
  * Author : OuLinhai <br>
  * Version : 1.0.0 <br>

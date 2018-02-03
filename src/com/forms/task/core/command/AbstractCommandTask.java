@@ -1,8 +1,7 @@
 package com.forms.task.core.command;
 
 /**
- * Copy Right Information : Forms Syntron <br>
- * Project : 数据分析平台迁移项目 <br>
+ * Project : Sybase数据库迁移 <br>
  * Description : 命令行生成任务接口的抽象实现类<br>
  * Author : OuLinhai <br>
  * Version : 1.0.0 <br>

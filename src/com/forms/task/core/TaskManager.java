@@ -15,8 +15,7 @@ import com.forms.platform.core.util.Tool;
 import com.forms.task.core.base.TaskGroup;
 
 /**
- * Copy Right Information : Forms Syntron <br>
- * Project : 数据分析平台迁移项目 <br>
+ * Project : Sybase数据库迁移 <br>
  * Description : 任务管理类<br>
  * Author : OuLinhai <br>
  * Version : 1.0.0 <br>

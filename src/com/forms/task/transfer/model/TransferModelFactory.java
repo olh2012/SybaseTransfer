@@ -14,7 +14,7 @@ import com.forms.task.transfer.filter.IModelFilter;
 
 /**
  * Copy Right Information : Forms Syntron <br>
- * Project : 数据分析平台迁移项目 <br>
+ * Project : Sybase数据库迁移 <br>
  * Description : 数据迁移对象工厂类<br>
  * Author : OuLinhai <br>
  * Version : 1.0.0 <br>

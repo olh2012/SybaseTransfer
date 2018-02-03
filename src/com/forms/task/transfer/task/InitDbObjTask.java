@@ -11,8 +11,7 @@ import com.forms.task.transfer.model.ITransferModel;
 import com.forms.task.transfer.model.impl.TransferTable;
 
 /**
- * Copy Right Information : Forms Syntron <br>
- * Project : 数据分析平台迁移项目 <br>
+ * Project : Sybase数据库迁移 <br>
  * Description : 初始化数据库对象任务<br>
  * Author : OuLinhai <br>
  * Version : 1.0.0 <br>
